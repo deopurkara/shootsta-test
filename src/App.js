@@ -1,25 +1,66 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from 'react'
+import './App.css'
 
-function App() {
+export default function App() {
+  const [definitions, setDefinitions] = useState([])
+  const [item, setItem] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async () => {
+    setLoading(true)
+    const response = await fetch(
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${item}`
+    )
+    if (!response.ok) {
+      const message = await response.text()
+      setError(JSON.parse(message))
+      setDefinitions([])
+      setLoading(false)
+      throw new Error(message.title)
+    }
+    setLoading(false)
+    setError('')
+    const jsonData = await response.json()
+    const definitionsAll = jsonData[0].meanings[0].definitions
+    setDefinitions(definitionsAll)
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div className='App'>
+      <div>
+        <input
+          name='item'
+          value={item}
+          onChange={(e) => setItem(e.target.value)}
+          aria-label='item'
+        />
+        <button
+          name='Search'
+          disabled={item.trim() === ''}
+          onClick={handleSubmit}
         >
-          Learn React
-        </a>
-      </header>
+          Search
+        </button>
+      </div>
+      <div>
+        <h2>Definitions:</h2>
+        {error && (
+          <div>
+            <div>{`${error.title}`}</div>
+            <div>{`${error.message}`}</div>
+          </div>
+        )}
+        {loading ? (
+          <div>Loading ...</div>
+        ) : (
+          <ul>
+            {Object.keys(definitions).map((element, i) => (
+              <li key={`list-${i}`}>{definitions[element].definition}</li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-  );
+  )
 }
-
-export default App;
